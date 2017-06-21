@@ -1,0 +1,13 @@
+---
+- name: Set up a local development environment on Ubuntu
+  hosts: localdev
+  vars_files:
+    - vars/custom.yml
+  roles:
+    #- common
+    #- mongodb
+    #- nodejs
+    #- golang
+    #- docker_ubuntu
+    #- virtualbox
+    #- vagrant

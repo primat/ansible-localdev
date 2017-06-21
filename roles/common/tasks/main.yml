@@ -1,0 +1,20 @@
+---
+# tasks file for common
+
+- name: Update apt repositories cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 36000
+
+- name: "Installing dev tools"
+  apt: pkg={{ item }} state=installed
+  with_items:
+  - git
+
+# - name: Remove useless packages from the cache
+#   apt:
+#     autoclean: yes
+
+# - name: Remove dependencies that are no longer required
+#   apt:
+#     autoremove: yes

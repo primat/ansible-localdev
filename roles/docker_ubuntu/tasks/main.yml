@@ -1,0 +1,67 @@
+---
+# tasks file for docker_ubuntu
+
+# Install docker repo - Based on instructions from here:
+# https://docs.docker.com/engine/installation/linux/ubuntu/#install-using-the-repository
+# http://docs.master.dockerproject.org/engine/installation/linux/ubuntulinux/
+
+- name: Update apt repositories cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 36000
+
+- name: Install the Docker ce repository
+  apt: pkg={{ item }} state=installed
+  become: yes
+  with_items:
+  - apt-transport-https
+  - ca-certificates
+  #- curl
+  - software-properties-common
+
+- name: Add apt key to keyring
+  become: yes
+  apt_key:
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    state: present
+
+- name: Get the fingerprint and assert it is correct
+  become: yes
+  command: apt-key fingerprint 0EBFCD88
+  register: fingerprint
+- assert:
+    that:
+      - "'9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88' in fingerprint.stdout"
+
+- name: Determine the OS release name
+  become: no
+  command: lsb_release -cs
+  register: os_name
+
+- name: Add the docker repo to apt-repository
+  become: yes
+  apt_repository: repo="deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ os_name.stdout }} stable" state=present
+
+- name: Install Docker ce
+  become: yes
+  apt: pkg={{ item }} state=installed
+  with_items:
+  - docker-ce
+
+- name: Create docker group
+  become: yes
+  group:
+   name: docker
+   state: present
+
+- name: Get the current username running the deploy
+  become: no
+  local_action: command whoami
+  register: current_user
+
+- name: Add current user to docker group
+  become: yes
+  user:
+    name: "{{ current_user.stdout }}"
+    append: yes
+    groups: docker

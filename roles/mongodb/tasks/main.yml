@@ -1,0 +1,97 @@
+---
+# tasks file for mongodb
+
+# Installs the latest mongodb from apt, creates a default userAdmin and secures the config
+
+# https://www.howtoforge.com/tutorial/install-mongodb-on-ubuntu-16.04/
+# https://stackoverflow.com/questions/37568848/how-to-install-mongodb-with-ansible
+
+- name: Add mongodb ppa key
+  become: yes
+  apt_key: >
+    keyserver=hkp://keyserver.ubuntu.com:80
+    id=0C49F3730359A14518585931BC711F9BA15703C6
+    state=present
+
+- name: Add mongodb sources list
+  become: yes
+  lineinfile: >
+    line="deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu {{ ansible_distribution_release }}/mongodb-org/{{ mongodb_version }} multiverse"
+    dest=/etc/apt/sources.list.d/mongodb.list
+    state=present
+    create=yes
+
+- name: Install mongodb
+  become: yes
+  apt: name=mongodb-org state=latest update_cache=yes
+
+- name: Install the latest pymongo package
+  become: yes
+  pip: name=pymongo state=latest use_mirrors=no
+
+- name: Check if a backup conf file exists
+  stat: path=/etc/mongod.conf.org
+  register: conf_backup
+  changed_when: not conf_backup.stat.exists
+
+- name: Make a backup of the original conf file
+  become: yes
+  copy:
+    src: /etc/mongod.conf
+    dest: /etc/mongod.conf.org
+    remote_src: true
+  when: not conf_backup.stat.exists
+
+- name: Stop the mongod service (ignore if not running)
+  become: yes
+  service: name=mongod state=stopped
+  ignore_errors: yes
+
+- name: Get the username running the deploy
+  local_action: command whoami
+  register: username_on_the_host
+  changed_when: false
+
+- name: Create the mongodb data directory
+  become: yes
+  file:
+    path: /data/db
+    state: directory
+    owner: "{{ username_on_the_host.stdout }}"
+    group: "{{ username_on_the_host.stdout }}"
+    recurse: yes
+    mode: 0755
+
+- name: Copy the default mongodb conf file to remote
+  become: yes
+  template:
+    src: mongod-default.conf
+    dest: /etc/mongod.conf
+
+- name: Restart mongodb
+  become: yes
+  service: name=mongod state=started
+
+- name: Set a mongodb user admin
+  become: yes
+  mongodb_user:
+    login_port: "{{ mongodb_port }}"
+    database: admin
+    name: "{{ db_admin }}"
+    password: "{{ db_admin_pw }}"
+    roles: userAdmin
+    state: present
+
+- name: Stop the mongod service
+  become: yes
+  service: name=mongod state=stopped
+
+- name: Copy the secure mongodb conf file to remote
+  become: yes
+  template:
+    src: mongod.conf
+    dest: /etc/mongod.conf
+
+- name: Start the mongod service
+  become: yes
+  service: name=mongod state=started

@@ -1,0 +1,11 @@
+---
+# defaults file for golang
+
+go_version_id: 1.8.3
+go_architecture: amd64
+go_os: linux
+go_tarball: "go{{ go_version_id }}.{{ go_os }}-{{ go_architecture }}.tar.gz"
+go_tarball_checksum: "sha256:1862f4c3d3907e59b04a757cfda0ea7aa9ef39274af99a784f5be843c80c6772" # 1.8.3
+go_version_str: "go version go{{ go_version_id }} {{ go_os }}/{{ go_architecture }}"
+go_download_url: "https://storage.googleapis.com/golang/{{ go_tarball }}"
+set_go_path: false

@@ -1,0 +1,47 @@
+---
+# tasks file for golang
+
+- name: Register the current Go version
+  command: /usr/local/go/bin/go version
+  ignore_errors: yes
+  register: go_version
+  changed_when: false
+
+- name: Remove extraneous Go installations
+  file:
+    path: /usr/local/go
+    state: absent
+  when: go_version|failed or go_version.stdout != go_version_str
+
+- name: Locating a local copy of the go tarball
+  stat: path=/tmp/{{ go_tarball }}
+  register: cached_archive
+  changed_when: not cached_archive.stat.exists
+
+- name: Download the Go tarball
+  get_url:
+    url: "{{ go_download_url }}"
+    dest: /tmp/{{ go_tarball }}
+    checksum: "{{ go_tarball_checksum }}"
+  when: (not cached_archive.stat.exists) and (go_version|failed or go_version.stdout != go_version_str)
+
+- name: Extract the Go tarball
+  become: yes
+  unarchive:
+    src: /tmp/{{ go_tarball }}
+    dest: /usr/local
+    copy: no
+  when: go_version|failed or go_version.stdout != go_version_str
+
+- name: Add go (bin) to the path
+  become: yes
+  copy:
+    src: go-bin.sh
+    dest: /etc/profile.d
+
+- name: Set GOPATH for all users
+  become: yes
+  copy:
+    src: go-path.sh
+    dest: /etc/profile.d
+  when: set_go_path

@@ -1,0 +1,7 @@
+---
+# defaults file for mongodb
+
+mongodb_version: 3.4
+mongodb_port: 27017
+db_admin: admin
+db_admin_pw: admin

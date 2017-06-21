@@ -1,0 +1,9 @@
+
+/setup-localdev.retry
+
+/roles/pycharm/files/*
+/roles/webstorm/files/*
+/roles/gogland/files/*
+/roles/intellij/files/*
+
+/vars/custom.yml

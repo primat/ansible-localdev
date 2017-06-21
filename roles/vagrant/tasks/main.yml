@@ -1,0 +1,6 @@
+---
+# tasks file for vagrant
+
+- name: Install Vagrant for Debian OS family
+  become: yes
+  apt: deb="{{ vagrant_url_deb }}" state=present
